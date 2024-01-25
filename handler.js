@@ -30,7 +30,7 @@ module.exports = async (client, ctx) => {
       if (m.isGroup && !isBotAdmin) {
          groupSet.localonly = false
       }
-      if (!users) global.db.users.push({
+      if (!users || typeof users.limit === undefined) return global.db.users.push({
          jid: m.sender,
          banned: false,
          limit: env.limit,
@@ -90,8 +90,8 @@ module.exports = async (client, ctx) => {
       if (body && prefix && commands.includes(command) || body && !prefix && commands.includes(command) && setting.noprefix || body && !prefix && commands.includes(command) && env.evaluate_chars.includes(command)) {
          if (setting.error.includes(command)) return client.reply(m.chat, Func.texted('bold', `🚩 Command _${(prefix ? prefix : '') + command}_ disabled.`), m)
          if (!m.isGroup && env.blocks.some(no => m.sender.startsWith(no))) return client.updateBlockStatus(m.sender, 'block')
-         if (cache.has(m.sender) && cache.get(m.sender) == 'on_hold' && !isOwner) return
-         cache.set(m.sender, 'on_hold')
+         if (cache.has(m.chat) && cache.get(m.chat) === 'on_hold' && !m.isBot) return
+         cache.set(m.chat, 'on_hold')
          if (commands.includes(command)) {
             users.hit += 1
             users.usebot = new Date() * 1
@@ -109,7 +109,7 @@ module.exports = async (client, ctx) => {
             if (!m.isGroup && !['owner', 'menfess', 'scan', 'verify', 'payment', 'premium'].includes(name) && chats && !isPrem && !users.banned && setting.groupmode) {
                client.sendMessageModify(m.chat, `⚠️ Using bot in private chat only for premium user, want to upgrade to premium plan ? send *${prefixes[0]}premium* to see benefit and prices.`, m, {
                   largeThumb: true,
-                  thumbnail: 'https://telegra.ph/file/3ea91587e84f33eba22fb.png',
+                  thumbnail: 'https://telegra.ph/file/0b32e0a0bb3b81fef9838.jpg',
                   url: setting.link
                }).then(() => chats.lastchat = new Date() * 1)
                continue
@@ -167,6 +167,8 @@ module.exports = async (client, ctx) => {
          }
       } else {
          const is_events = Object.fromEntries(Object.entries(plugins).filter(([name, prop]) => !prop.run.usage))
+         if (cache.has(m.chat) && cache.get(m.chat) === 'on_hold' && !m.isBot) return
+         cache.set(m.sender, 'on_hold')
          for (let name in is_events) {
             let event = is_events[name].run
             if (m.fromMe || m.chat.endsWith('broadcast') || /pollUpdate/.test(m.mtype)) continue
@@ -177,7 +179,7 @@ module.exports = async (client, ctx) => {
             if (!m.isGroup && !['menfess_ev', 'chatbot', 'auto_download'].includes(name) && chats && !isPrem && !users.banned && new Date() * 1 - chats.lastchat < env.timeout) continue
             if (!m.isGroup && setting.groupmode && !['system_ev', 'menfess_ev', 'chatbot', 'auto_download'].includes(name) && !isPrem) return client.sendMessageModify(m.chat, `⚠️ Using bot in private chat only for premium user, want to upgrade to premium plan ? send *${prefixes[0]}premium* to see benefit and prices.`, m, {
                largeThumb: true,
-               thumbnail: await Func.fetchBuffer('https://telegra.ph/file/3ea91587e84f33eba22fb.png'),
+               thumbnail: await Func.fetchBuffer('https://telegra.ph/file/0b32e0a0bb3b81fef9838.jpg'),
                url: setting.link
             }).then(() => chats.lastchat = new Date() * 1)
             if (event.cache && event.location) {
